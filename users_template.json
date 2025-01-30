@@ -1,0 +1,16 @@
+{
+    "vk_id": {
+        "agreed_to_processing": false,
+        "name": "",
+        "surname": "",
+        "class": "",
+        "choosen_class": "",
+        "last_word": "",
+        "message_counter": 1,
+        "permissions": [],
+        "activity": [],
+        "has_antispam_warning": false,
+        "get_mailing": true,
+        "get_automailing": true
+    }
+}
