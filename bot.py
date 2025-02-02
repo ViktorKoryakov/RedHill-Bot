@@ -10,7 +10,7 @@ import logging
 import threading
 import schedule
 import pymorphy3
-# from admin_commands import *
+from admin_commands import *
 from vk_api.longpoll import VkLongPoll, VkEventType
 from widgets import get_quote
 from keyboards import *
@@ -39,18 +39,18 @@ def automailing():
     quote = get_quote().split(' — ')
     quote_text = f'&#128173; Цитата дня: \n"{quote[0]}" \n&#128100; {quote[1]}'
     end_pattern = 'Хорошего дня! Пусть всё запланированное получится &#128521; \n- "Отключить авторассылку" - больше не получать такие сообщения'
-    
+
     for user_id, user_info in users.items():
         if is_date_holiday(datetime.date.today(), 'any'): break
-        
+
         if not user_info['get_automailing'] or (user_info['agreed_to_processing'] == 'Под вопросом'): continue
-        
-        try: 
+
+        try:
             if user_info['class'] != '':
                 lessons = get_schedule(user_info["class"].upper(), dt.date.today())
                 lessons_widget = f'&#128218; Расписание уроков для {user_info["class"].upper()} на сегодня: \n{lessons} \n&#10071; Возможны неточности. Советуем регулярно проверять классный чат и стенд "Школьная жизнь" '
                 if lessons.startswith('Нет уроков'): continue
-            else: 
+            else:
                 lessons_widget = f'&#128218; Расписание уроков на сегодня: \nВы ещё не выбрали класс по умолчанию. \nЧтобы сделать это: "Расписание" -> (любой класс) -> "Выбрать классом по умолчанию"'
 
             greeting = f'Доброе утро, {user_info["name"]}! &#9728;' if user_info['agreed_to_processing'] else 'Доброе утро! &#9728;'
@@ -79,11 +79,11 @@ def start_automailing():
         automailing_thread.start()
         print('Успешно запущена система авторассылки')
     except Exception: logging.exception('Произошла ошибка при запуске системы авторассылки')
-    
+
 def get_rus_date(value: str, source: str = None) -> str:
     """
     Возвращает русифицированную версию запрашиваемого компонента даты
-    
+
     :param value: Компонент даты, который нужно получить (month, weekday, to_weekday)
     :type value: str
 
@@ -106,7 +106,7 @@ def get_rus_date(value: str, source: str = None) -> str:
         11: 'ноября',
         12: 'декабря'
     }
-    
+
     weekdays = {
         0: 'понедельник',
         1: 'вторник',
@@ -129,9 +129,9 @@ def get_rus_date(value: str, source: str = None) -> str:
 
     weekdays_reverse = {v: k for k, v in weekdays.items()}
 
-    if (value == 'month'): 
+    if (value == 'month'):
         return months.get(source if isinstance(source, int) else dt.date.today().month, '(ошибка)')
-    elif (value == 'weekday'): 
+    elif (value == 'weekday'):
         return weekdays.get(source if source is not None else dt.date.today().weekday(), '(ошибка)')
     elif (value == 'to_weekday'):
         if isinstance(source, str):
@@ -160,9 +160,9 @@ def get_word_form(num: int, word: str) -> str:
     return parsed_word
 
 def get_schedule(for_class: str, date: dt.date) -> str | bool:
-    if isinstance(date, dt.datetime): 
+    if isinstance(date, dt.datetime):
         date = date.date()
-    
+
     lessons_schedule = get('schedule')
     public_holidays = {
         (4, 11): 'Нет уроков (День народного единства) &#127479;&#127482;',
@@ -183,21 +183,21 @@ def get_schedule(for_class: str, date: dt.date) -> str | bool:
 
     if (date.day, date.month) in public_holidays: return public_holidays[(date.day, date.month)]
 
-    for holiday in school_holidays: 
+    for holiday in school_holidays:
         if is_date_holiday(date, holiday): return school_holidays[holiday]
-    
+
     return lessons_schedule[for_class][get_rus_date('weekday', date.weekday()).capitalize()]
 
 def toggle_subscribition(id: int | str, subscribition: str) -> str:
     """
     Изменяет статус подписки на определённый тип рассылки
-    
+
     :param id: ID пользователя ВКонтакте (цель)
     :type id: int | str
-    
+
     :param subscribition: Тип рассылки ("mailing" / "automailing")
     :type subscribition: str
-    
+
     :rtype: str
     """
     users_key = f'get_{subscribition}'
@@ -234,26 +234,26 @@ def is_spammer(user_id: int) -> bool:
     activity.append(now)
     activity = [timecode for timecode in activity if now - timecode <= 10] # Удаление сообщений старше 10 секунд
     users[str(user_id)]['activity'] = activity[-MAX_ACTIVITY_MEMORY:] # Выборка не более MAX_ACTIVITY_MEMORY сообщений (настройка в main.py)
-    
+
     if len(activity) > 5: # Если 5+ сообщений за 10 секунд
         if not has_warning: # Если нет предупреждения, дать
             send_msg(sender, 0, f'Слишком быстро! \nПовторите попытку через несколько секунд')
             users[str(user_id)]['has_antispam_warning'] = True
         dump('users', users)
         return True # Не продолжать обработку команды
-    
+
     if has_warning: # Если предупреждение есть, сбросить
         users[str(user_id)]['has_antispam_warning'] = False
     dump('users', users)
     return False # Продолжить обработку команды
-    
-# [ COMMANDS / КОМАНДЫ ]    
+
+# [ COMMANDS / КОМАНДЫ ]
 def home_page():
     set_last_word(sender)
     send_msg(sender, 0, 'Главное меню')
     # send_msg(sender, 0, f'Главное меню \n\n&#9999; Ведётся работа над переносом нового расписания уроков. Авторассылка отключена \nГотовы помочь в переносе? Напишите разработчику - https://vk.com/im?sel={DEVELOPER_ID}')
 
-def until_summer():                 
+def until_summer():
     set_last_word(sender)
     update_counter('Счётчик дней до лета')
     summer = moscow_tz.localize(dt.datetime(2025, 6, 1, 0, 0, 0)) # Временная метка начала лета
@@ -273,7 +273,7 @@ def contacts_page():
     set_last_word(sender)
     update_counter('Контакты')
     send_msg(sender, contacts, f'Основная информация о школе: \n{"—"*10}\n• Полное наименование: Муниципальное бюджетное общеобразовательное учереждение "Средняя общеобразовательная школа с углублённым изучением отдельных предметов №47 города Кирова" \n• Сокращённое наименование: МБОУ СОШ с УИОП №47 г. Кирова \n• Почтовый адрес: 610050, г. Киров, ул. Андрея Упита, д. 9 \n• E-mail: sch47@kirovedu.ru \n\n• Официальный сайт: https://sch47-kirov.gosuslugi.ru/ \n• &#128214; Электронный дневник - https://one.43edu.ru \n• &#128187; [id{DEVELOPER_ID}|Разработчик бота] \n\n• &#128188; "Администрация" - информация об администрации и службах школы \n• &#128241; "Соцсети" - узнать информационные площадки школы \n\n&#127969; "Домой" - вернуться на главную страницу')
-    
+
 def about_bot_page():
     set_last_word(sender)
     update_counter('О боте')
@@ -326,7 +326,7 @@ for event in longpoll.listen():
             continue
 
         if is_spammer(sender): continue
-        
+
         user_info = users[str(sender)]
         last_word = user_info['last_word']
         update_counter('Всего сообщений')
@@ -349,13 +349,12 @@ for event in longpoll.listen():
             users[str(sender)]['last_word'] = ''
             dump("users", users)
             send_msg(sender, 0, 'Вы подтвердили своё согласие на сбор и обработку персональных данных. Спасибо! \nВы всегда можете удалить свои персональные данные из системы в "Личном кабинете". \n\nВы на главной странице. Для навигации можете использовать кнопки в меню. Приятного пользования нашим ботом и хорошего дня! &#9728;')
-        
+
         else:
             logging.info(f'{sender} написал "{received_message}"')
 
-            # if handle_admin_command(sender, last_word, received_message) is not False: pass
-            # elif received_message in ['начать', 'старт', 'start', 'хелп', 'help', 'помощь', 'команды']:
-            if received_message in ['начать', 'старт', 'start', 'хелп', 'help', 'помощь', 'команды']:
+            if handle_admin_command(sender, last_word, received_message) is not False: pass
+            elif received_message in ['начать', 'старт', 'start', 'хелп', 'help', 'помощь', 'команды']:
                 set_last_word(sender)
                 send_msg(sender, 0, 'Список команд: \n• Расписание - узнать расписание уроков \n• Подготовка к школе - информация для первоклассников и их родителей \n• Звонки - расписание звонков \n• Контакты - основная информация \n• Соцсети - информационные площадки школы \n• Личный кабинет - панель управления данными \n• Обновления - список изменений \n• Благодарности - люди, внёсшие свой вклад в развитие бота \n• До лета - счётчик дней до лета \n• Главное меню - главная страница \n\nПриятного пользования нашим ботом!')
             elif received_message in ['расписание', 'уроки']:
@@ -366,13 +365,13 @@ for event in longpoll.listen():
             elif received_message in ['до лета', 'счётчик дней до лета', 'лето через', 'когда лето', 'лето когда', 'жду лето', 'хочу лета', 'хочу лето', 'жду лета', 'сколько осталось до лета', 'сколько дней до лета', 'через сколько лето', 'через сколько дней лето']:
                 until_summer()
             elif received_message in ['о боте', 'about bot', 'about the bot', 'about a bot', 'инфа о боте', 'информация о боте', 'команда проекта', 'назад (о боте)']:
-                about_bot_page()      
+                about_bot_page()
             elif received_message in ['информационные площадки школы', 'соцсети', 'соцсети школы']:
                 set_last_word(sender)
                 update_counter('Соцсети школы')
                 send_msg(sender, social_networks, f'Информационные площадки школы: \n{"—"*10} \n• Red Hill в ВКонтакте - https://vk.com/redhill47 \n• Red Hill в Одноклассниках - https://ok.ru/group/70000002346199 \n• 47 высота - https://vk.com/ssc_47height \n• Музей "Светлица" - https://vk.com/svetlitsamuseeum \n• Бессмертный полк 47 - https://vk.com/bessmertniypolk47 \n• Библиотека школы - https://vk.com/club192165194 \n\n&#8505; "Назад (контакты)" - вернуться в контакты школы \n&#127969; "Домой" - вернуться в главное меню')
             elif received_message in ['контакты', 'назад (контакты)', 'инфа', 'информация']: contacts_page()
-            elif received_message in ['подготовка к школе', 'подготовка', 'в первый раз в первый класс', 'как подготовиться к школе', 'скоро в школу', 'первый раз в первый класс']: 
+            elif received_message in ['подготовка к школе', 'подготовка', 'в первый раз в первый класс', 'как подготовиться к школе', 'скоро в школу', 'первый раз в первый класс']:
                 set_last_word(sender)
                 send_msg(sender, 0, f'&#127891; По вопросам, связанным с начальной школой и подготовкой к ней, обращайтесь к [id221574947|Шишкиной Светлане Леонидовне], куратору начальных классов. Она сможет ответить на интересующие Вас вопросы. \n&#9742; Также Вы всегда можете позвонить Светлане Леонидовне по номеру +7(8332)227-453')
             elif received_message in ['администрация', 'администрация и службы школы', 'службы школы']:
@@ -382,10 +381,10 @@ for event in longpoll.listen():
             elif (received_message in ['обновления', 'апдейты', 'upd', 'upds', 'апд', 'апдз', 'апдс', 'обновления бота', 'обновление бота']):
                 set_last_word(sender)
                 update_counter('Обновления')
-                send_msg(sender, back_to_about_bot, f'Версия 2.1.11 \nДата обновления: 30.01.2025 \n\n• Добавлена защита от спамеров \n• Мелкие технические изменения \n\nНашли баг/ошибку/недоработку или у Вас есть идея/отзыв? Смело пишите [id{DEVELOPER_ID}|разработчику]')
+                send_msg(sender, back_to_about_bot, f'Версия 2.1.12 \nДата обновления: 02.02.2025 \n\n• Мелкие технические изменения \n\nНашли баг/ошибку/недоработку или у Вас есть идея/отзыв? Смело пишите [id{DEVELOPER_ID}|разработчику]')
             elif received_message in ['credits', 'благодарности']:
                 set_last_word(sender)
-                update_counter('Благодарности') 
+                update_counter('Благодарности')
                 send_msg(sender, back_to_about_bot, 'Разработчик бота выражает искреннюю благодарность людям, которые внесли свой вклад в развитие бота \n\n• Даниил А. \n• Александр К. \n• Ольга Ж. \n• Яша Л. \n• Егор Д. \n• Татьяна Ф. \n• Татьяна Ш. \n• Дарья З.')
             elif received_message in ['звонки', 'расписание звонков', 'назад (расписание звонков)']:
                 set_last_word(sender, 'звонки')
@@ -400,7 +399,7 @@ for event in longpoll.listen():
                 if user_info['agreed_to_processing'] is True:
                     set_last_word(sender, 'подтверждение удаления данных')
                     send_msg(sender, unprocessing_confirm, f'&#8252; Внимание! \nВы собираетесь отказаться от сбора и обработки персональных данных. Несколько нюансов: \n\n• В случае подтверждения некоторые функции бота могут работать некорректно \n• Нажимая на кнопку "Подтвердить", Вы удалите из базы свои имя и фамилию пользователя ВКонтакте ({user_info["name"]} {user_info["surname"]}) \n• Удалить Ваш ID пользователя ВКонтакте нельзя, поскольку он используется для отправки сообщений \n• Вы можете снова включить сбор и обработку данных, командой "Собрать данные" в личном кабинете')
-                else: 
+                else:
                     send_msg(sender, get_profile_keyboard(sender), '&#10060; У Вас уже отключен сбор и обработка персональных данных.')
                     personal_account()
             elif received_message in ['собрать данные', 'дать согласие на обработку некоторых данных', 'дать согласие на сбор и обработку некоторых данных', 'дать согласие на сбор и обработку персональных данных']:
@@ -437,7 +436,7 @@ for event in longpoll.listen():
                         weekday = get_rus_date('weekday')
                         month = get_rus_date('month')
                         if (received_message in ['сегодня']):
-                            if (weekday == 'воскресенье'): 
+                            if (weekday == 'воскресенье'):
                                 send_msg(sender, get_schedule_keyboard(sender), f'Cегодня {weekday}, {dt.date.today().day} {month} \nРасписание на воскресенье для {choosen_class}: \n{"—"*10} \nВыходной день. Хорошего отдыха!')
                             else:
                                 send_msg(sender, get_schedule_keyboard(sender), f'Cегодня {weekday}, {dt.date.today().day} {month} \nРасписание на {get_rus_date("to_weekday")} для {choosen_class}: \n{"—"*10} \n{get_schedule(choosen_class, dt.date.today())}')
@@ -445,13 +444,13 @@ for event in longpoll.listen():
                             tomorrow = dt.date.today()+dt.timedelta(days=1)
                             tomorrow_weekday = get_rus_date('weekday', tomorrow.weekday())
                             tomorrow_month = get_rus_date('month', tomorrow.month)
-                            if (tomorrow_weekday == 'воскресенье'): 
+                            if (tomorrow_weekday == 'воскресенье'):
                                 send_msg(sender, get_schedule_keyboard(sender), f'Cегодня {weekday}, {dt.date.today().day} {month} \nРасписание на воскресенье, {tomorrow.day} {tomorrow_month}, для {choosen_class}: \n{"—"*10} \nВыходной день. Хорошего отдыха!')
                             else:
                                 send_msg(sender, get_schedule_keyboard(sender), f'Cегодня {weekday}, {dt.date.today().day} {month} \nРасписание на {get_rus_date("to_weekday", tomorrow_weekday)}, {tomorrow.day} {tomorrow_month}, для {choosen_class}: \n{"—"*10} \n{get_schedule(choosen_class, tomorrow)}')
                         elif (received_message in ['понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота']):
                             lessons_schedule = get('schedule')
-                            send_msg(sender, get_schedule_keyboard(sender), f'Cегодня {weekday}, {dt.date.today().day} {month} \nРасписание на {get_rus_date("to_weekday", received_message)} для {choosen_class}: \n{"—"*10} \n{lessons_schedule[choosen_class][received_message.capitalize()]}') 
+                            send_msg(sender, get_schedule_keyboard(sender), f'Cегодня {weekday}, {dt.date.today().day} {month} \nРасписание на {get_rus_date("to_weekday", received_message)} для {choosen_class}: \n{"—"*10} \n{lessons_schedule[choosen_class][received_message.capitalize()]}')
                         elif (received_message == 'назад'):
                             users[str(sender)]['last_word'] = 'расписание (главная страница)'
                             users[str(sender)]["choosen_class"] = ""
