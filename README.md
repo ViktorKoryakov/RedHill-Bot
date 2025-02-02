@@ -1,5 +1,5 @@
 <div align="center">
-  <img src='logo.jpg' alt='Логотип RedHill' height='100'>
+  <img src='logo.jpg' alt='Логотип RedHill' height='150'>
 
   # RedHill Бот
 </div>
