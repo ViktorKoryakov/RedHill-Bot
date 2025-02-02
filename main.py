@@ -61,9 +61,9 @@ def get(type: str) -> dict:
     return read_json(filename, default_data)
 
 def is_admin(user_id: int) -> bool:
-    admin_ids = []
-    for id in getenv('ADMIN_IDS').split(', '): admin_ids.append(id)
-    if user_id in admin_ids or user_id == DEVELOPER_ID: return True
+    admins_ids = []
+    for id in getenv('ADMINS_IDS').split(', '): admins_ids.append(id)
+    if user_id in admins_ids or user_id == DEVELOPER_ID: return True
     else: return False
 
 def is_banned(user_id: int) -> bool:
