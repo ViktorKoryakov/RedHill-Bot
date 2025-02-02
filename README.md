@@ -1,7 +1,7 @@
 <div align="center">
-  <img src='logo.jpg' alt='Логотип RedHill' height='150'>
-
-  # RedHill Бот
+  <img src='logo.jpg' alt='Логотип RedHill' height='100'>
+  
+  ### RedHill Бот
 </div>
 
 
