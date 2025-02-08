@@ -63,13 +63,11 @@ def get(type: str) -> dict:
 def is_admin(user_id: int) -> bool:
     admins_ids = []
     for id in getenv('ADMINS_IDS').split(', '): admins_ids.append(id)
-    if user_id in admins_ids or user_id == DEVELOPER_ID: return True
-    else: return False
+    return True if ((user_id in admins_ids) or (user_id == DEVELOPER_ID)) else False
 
 def is_banned(user_id: int) -> bool:
     try:
-        if user_id in get('bans'): return True
-        return False
+        return True if user_id in get('bans') else False
     except Exception:
         logging.exception(f'Произошла ошибка при получении статуса блокировки юзера')
 
@@ -113,8 +111,7 @@ def translate_bool(boolean: bool) -> str:
 
     :rtype: str
     """
-    if boolean is True: return 'Да'
-    return 'Нет'
+    return 'Да' if boolean is True else 'Нет'
 
 def statistics() -> str:
     statistics_list: list[str] = []
@@ -148,5 +145,5 @@ load_dotenv(find_dotenv())
 logging.basicConfig(level=logging.INFO, filename='used_commands.log', format='%(asctime)s | %(levelname)s: %(message)s', filemode='a', encoding='utf-8')
 auth = vk_api.VkApi(token = getenv('TOKEN'))
 moscow_tz = timezone('Europe/Moscow')
-DEVELOPER_ID = getenv('DEVELOPER_ID')
+DEVELOPER_ID = int(getenv('DEVELOPER_ID'))
 MAX_ACTIVITY_MEMORY = 30
